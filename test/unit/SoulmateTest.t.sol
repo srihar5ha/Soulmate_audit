@@ -7,6 +7,7 @@ import {BaseTest} from "./BaseTest.t.sol";
 import {Soulmate} from "../../src/Soulmate.sol";
 
 contract SoulmateTest is BaseTest {
+
     function test_MintNewToken() public {
         uint tokenIdMinted = 0;
 
@@ -64,5 +65,44 @@ contract SoulmateTest is BaseTest {
         }
         console2.log(message);
         assertTrue(found);
+    }
+    
+    function test_accessSharedSpace() public{
+            vm.prank(soulmate1);
+            soulmateContract.writeMessageInSharedSpace("Buy some eggs");
+            vm.prank(soulmate2);
+            string memory message = soulmateContract.readMessageInSharedSpace();
+            console2.log("message read by soulmate2 is",message);
+            
+            address newuser= makeAddr("user with no NFT");
+            vm.prank(newuser);
+            string memory newmessage = soulmateContract.readMessageInSharedSpace();
+            console2.log("message read by new user is ", newmessage);
+
+            //new user can also write into shared space
+            vm.prank(newuser);
+            soulmateContract.writeMessageInSharedSpace("I dont have nft");
+            
+            vm.prank(soulmate2);
+            message = soulmateContract.readMessageInSharedSpace();
+            console2.log("message read by soulmate2 ",message);
+           
+            string[4] memory possibleText = [
+            "I dont have nft, sweetheart",
+            "I dont have nft, darling",
+            "I dont have nft, my dear",
+            "I dont have nft, honey"
+        ];
+        bool found;
+        for (uint i; i < possibleText.length; i++) {
+            if (compare(possibleText[i], message)) {
+                found = true;
+                break;
+            }
+        }
+        assertTrue(found);
+
+            
+
     }
 }

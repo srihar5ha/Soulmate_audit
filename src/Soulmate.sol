@@ -103,7 +103,12 @@ contract Soulmate is ERC721 {
 
     /// @notice Allows any soulmates with the same NFT ID to write in a shared space on blockchain.
     /// @param message The message to write in the shared space.
+    //@audit: sharedSpace can be accessed by anyone on the block chain. 
     function writeMessageInSharedSpace(string calldata message) external {
+        //@audit: what happens when msg.sender does not have nft, 0 is returned which becomes 
+        //shared space of first owner.
+        //@audit: should check if the msg.sender owns the nft first
+        require(soulmateOf[msg.sender]!=address(0), "User does not own soulmate NFT");
         uint256 id = ownerToId[msg.sender];
         sharedSpace[id] = message;
         emit MessageWrittenInSharedSpace(id, message);
@@ -112,6 +117,9 @@ contract Soulmate is ERC721 {
     /// @notice Allows any soulmates with the same NFT ID to read in a shared space on blockchain.
     function readMessageInSharedSpace() external view returns (string memory) {
         // Add a little touch of romantism
+        //@audit: by default it shares sharedspace[0], should check for nft ownership first.
+        require(soulmateOf[msg.sender]!=address(0), "User does not own soulmate NFT");
+
         return
             string.concat(
                 sharedSpace[ownerToId[msg.sender]],

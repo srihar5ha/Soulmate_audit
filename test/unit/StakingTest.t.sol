@@ -83,4 +83,20 @@ contract StakingTest is BaseTest {
                 weekOfStaking * balancePerSoulmates + balancePerSoulmates
         );
     }
+
+    function test_ClaimRewards2() public{
+        uint balancePerSoulmates = 5 ether;
+        uint weekOfStaking = 1;
+        _depositTokenToStake(balancePerSoulmates);
+
+        vm.prank(soulmate1);
+        vm.warp(block.timestamp + weekOfStaking * 1 weeks + 1 seconds);
+        // console2.log("last claim ",stakingContract.lastClaim(soulmate1));
+        stakingContract.claimRewards();
+
+        assertTrue(
+            loveToken.balanceOf(soulmate1) ==
+                weekOfStaking * balancePerSoulmates
+        );
+    }
 }

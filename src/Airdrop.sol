@@ -68,7 +68,7 @@ contract Airdrop {
         uint256 tokenAmountToDistribute = (numberOfDaysInCouple *
             10 ** loveToken.decimals()) - amountAlreadyClaimed;
 
-        // Dust collector
+        // Dust collector : collecting left over tokens 
         if (
             tokenAmountToDistribute >=
             loveToken.balanceOf(address(airdropVault))
@@ -80,7 +80,11 @@ contract Airdrop {
         _claimedBy[msg.sender] += tokenAmountToDistribute;
 
         emit TokenClaimed(msg.sender, tokenAmountToDistribute);
-
+        //@audit:notes: since it is transferFrom method, we have protection against reentrancy?
+        //@audit:notes: no it does not protect, but since we are not having any external call
+        //there is no/less scope for reentrancy.
+        //@audit:low: should have zero check for tokenAmounttodistribute to avoid wastage of gas. 
+        //require(tokenAmountToDistribute > 0, "No tokens to claim at the moment.");
         loveToken.transferFrom(
             address(airdropVault),
             msg.sender,

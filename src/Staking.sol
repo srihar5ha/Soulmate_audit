@@ -51,6 +51,11 @@ contract Staking {
         if (loveToken.balanceOf(address(stakingVault)) == 0)
             revert Staking__NoMoreRewards();
         // No require needed because of overflow protection
+        //@audit:Reentrancy. we need this check before incrementing userStakes 
+        // bool success = loveToken.transferFrom(msg.sender, address(this), amount);
+        //    require(success, "Transfer failed");
+        //@audit:notes: not needed any checks. if transferfrom fails everything is reverted. 
+        
         userStakes[msg.sender] += amount;
         loveToken.transferFrom(msg.sender, address(this), amount);
 
@@ -60,7 +65,10 @@ contract Staking {
     /// @notice Decrease the userStakes variable and transfer LoveToken to the user withdrawing.
     function withdraw(uint256 amount) public {
         // No require needed because of overflow protection
+        //@audit:notes: if amount> stakes, 
+        //it will get into negative, transaction reverts.
         userStakes[msg.sender] -= amount;
+
         loveToken.transfer(msg.sender, amount);
         emit Withdrew(msg.sender, amount);
     }
@@ -68,9 +76,11 @@ contract Staking {
     /// @notice Claim rewards for staking.
     /// @notice Users can claim 1 token per staking token per week.
     function claimRewards() public {
+        //@audit: by default soulmateId =0 if msg.sender does not have soulmate nft.
         uint256 soulmateId = soulmateContract.ownerToId(msg.sender);
         // first claim
         if (lastClaim[msg.sender] == 0) {
+            //@audit:notes: last claim is set to creation date so that we can count weeks in next step
             lastClaim[msg.sender] = soulmateContract.idToCreationTimestamp(
                 soulmateId
             );
@@ -87,8 +97,7 @@ contract Staking {
         lastClaim[msg.sender] = block.timestamp;
 
         // Send the same amount of LoveToken as the week waited times the number of token staked
-        uint256 amountToClaim = userStakes[msg.sender] *
-            timeInWeeksSinceLastClaim;
+        uint256 amountToClaim = userStakes[msg.sender] * timeInWeeksSinceLastClaim;
         loveToken.transferFrom(
             address(stakingVault),
             msg.sender,
